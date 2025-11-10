@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dibujo con reconocimiento y login</title>
-   <link rel="stylesheet" href="styles.css">
+  <title>Dibujo con reconocimiento de dibujo</title>
+  <link rel="stylesheet" href="styles.css">
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.10/p5.min.js"></script>
   <script src="https://unpkg.com/ml5@1/dist/ml5.min.js"></script>
-
 </head>
 <body>
 
   <div class="container">
+    <!-- Formulario de acceso -->
     <form id="form-login" autocomplete="off">
       <label for="usuario">Usuario:</label>
       <input type="text" id="usuario" required>
@@ -26,6 +26,8 @@
 
     <button id="reiniciar">Reiniciar</button>
     <button id="verificar">Verificar imagen</button>
+    <button id="regresar-menu" class="btn-menu">Regresar al menú</button>
+
   </div>
 
   <script>
@@ -39,8 +41,9 @@
     let canvas;
     let resultDiv;
     let resultadoActual = '';
+    let confianzaActual = 0;
 
-    // Carga modelo 
+    // Carga del modelo preentrenado DoodleNet
     function preload() {
       classifier = ml5.imageClassifier('DoodleNet');
     }
@@ -50,26 +53,34 @@
       canvas.parent('canvas-container');
       background(255);
 
-      // Iniciar clasificación 
+      // Iniciar clasificación automática del dibujo
       classifier.classifyStart(canvas, gotResult);
       resultDiv = select('#resultados');
 
       select('#reiniciar').mousePressed(clearCanvas);
       select('#verificar').mousePressed(verificarImagen);
+      select('#regresar-menu').mousePressed(() => {
+     window.location.href = 'index.html';
+});
+
     }
 
-     // Funcio que recibira el resultado
+    // Función que recibe los resultados del modelo
     function gotResult(results) {
       let label = results[0].label;
       let confidence = (results[0].confidence * 100).toFixed(2);
       resultadoActual = label;
+      confianzaActual = parseFloat(confidence);
+
+      // Muestra el resultado con porcentaje
       resultDiv.html(`✏️ ${label} - ${confidence}%`);
     }
 
-     // Limpiar canvas
     function clearCanvas() {
       background(255);
       resultDiv.html('Dibuja algo...');
+      resultadoActual = '';
+      confianzaActual = 0;
     }
 
     function draw() {
@@ -80,7 +91,7 @@
       }
     }
 
-    // Verificar usuario y dibujo
+    // Verifica usuario + precisión del dibujo
     function verificarImagen() {
       const usuario = document.querySelector('#usuario').value;
       const password = document.querySelector('#password').value;
@@ -91,11 +102,20 @@
         return;
       }
 
-      // Comparar dibujo con código del usuario
+      if (!resultadoActual) {
+        alert('Primero dibuja algo antes de verificar.');
+        return;
+      }
+
+      if (confianzaActual < 75) {
+        alert(`La confianza del dibujo (${confianzaActual}%) es baja.\nDebe ser superior al 75%.`);
+        return;
+      }
+
       if (resultadoActual === user.codigo) {
-        alert(`¡Bienvenido ${usuario}! Tu dibujo fue reconocido correctamente.`);
+        alert(`¡Bienvenido ${usuario}! Tu dibujo fue reconocido correctamente con ${confianzaActual}%.`);
       } else {
-        alert(`El dibujo no coincide con tu código (${user.codigo}). Intenta otra vez.`);
+        alert(`El dibujo (${resultadoActual}) no coincide con tu código (${user.codigo}). Intenta otra vez.`);
       }
     }
   </script>

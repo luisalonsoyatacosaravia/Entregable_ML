@@ -49,6 +49,7 @@
   </div>
 
   <button id="btnSonido">Desactivar Sonido</button>
+  <button id="btnRegresar">Regresar</button>
   <div id="canvasContainer"></div>
 
 <script>
@@ -70,8 +71,13 @@
     classifier = ml5.imageClassifier(imageModelURL + 'model.json');
   }
 
-  // Crea un canvas donde se mostrará la cámara
-  function setup() {
+  
+ function setup() {
+  //Creación del botón Regresar
+    document.getElementById('btnRegresar').addEventListener('click', () => {
+    window.location.href = 'index.html';
+  });
+    
     let canvas = createCanvas(320, 260);
     canvas.parent('canvasContainer');
 
