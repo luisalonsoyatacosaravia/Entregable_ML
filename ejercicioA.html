@@ -25,6 +25,8 @@
     const resultado = document.getElementById('resultado');
     let modelo;
 
+
+  // Función para cargar el modelo MobileNet
     async function cargarModelo() {
       resultado.textContent = "Cargando modelo...";
       modelo = await mobilenet.load();
@@ -34,6 +36,7 @@
 
     cargarModelo();
 
+    // Detecta cuando el usuario sube un archivo
     fileInput.addEventListener('change', async (event) => {
       const archivo = event.target.files[0];
       if (archivo) {
@@ -43,6 +46,8 @@
           preview.src = e.target.result;
           resultado.textContent = "Analizando imagen...";
 
+          // Espera a que la imagen se cargue 
+
           preview.onload = async () => {
             const predicciones = await modelo.classify(preview);
 
@@ -51,6 +56,7 @@
             className = className.split(',')[0];
 
             const porcentaje = (probability * 100).toFixed(2);
+            
             resultado.innerHTML = `
               <strong>Label:</strong> ${className}<br>
               <strong>Confidence:</strong> ${porcentaje}%
