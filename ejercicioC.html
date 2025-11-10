@@ -42,89 +42,111 @@
   <!-- Formulario-->
   <div id="referencias">
     <div><img src="images/celular.jpg" alt="celular"><br>Celular</div>
-    <div><img src="images/billetera.jpg" alt="bolletera"><br>Billetera</div>
+    <div><img src="images/billetera.jpg" alt="billetera"><br>Billetera</div>
     <div><img src="images/cargador.jpg" alt="cargador"><br>Cargador</div>
     <div><img src="images/llaves.jpg" alt="llave"><br>Llave</div>
-    <div><img src="images/tomatodo.jpg" alt="tomatodo"><br>Tomatodo</div>
+    <div><img src="images/mouse.jpg" alt="mouse"><br>Mouse</div>
   </div>
 
   <button id="btnSonido">Desactivar Sonido</button>
   <div id="canvasContainer"></div>
 
-  <script>
-    let classifier;
-    const imageModelURL = './models/'; // Ruta de tu modelo
-    let video;
-    let flippedVideo;
-    let label = "";
-    let ultimoLabel = "";
-    let sonidoActivo = true;
+<script>
+  let classifier;       // Clasificador del modelo ML5                   
+  const imageModelURL = './models/';
+  let video;
+  let flippedVideo;
+  let label = "";
+  let ultimoLabel = "";
+  let sonidoActivo = true;
+  let ultimaVoz = 0;
+  const tiempoMinimoEntreVoces = 3000; 
+  let deteccionEstable = 0; // tiempo acumulado del mismo objeto
 
-    const objetosValidos = ["celular","billetera","cargador","llave","tomatodo"];
 
-    function preload() {
-      classifier = ml5.imageClassifier(imageModelURL + 'model.json'); // Cargar modelo
-    }
+  const objetosValidos = ["celular", "billetera", "cargador", "llave", "mouse"];
 
-    function setup() {
-      // Crear canvas
-      let canvas = createCanvas(320, 260);
-      canvas.parent('canvasContainer');
+  function preload() {
+    classifier = ml5.imageClassifier(imageModelURL + 'model.json');
+  }
 
-      // Captura de video
-      video = createCapture(VIDEO);
-      video.size(320, 240);
-      video.hide();
+  // Crea un canvas donde se mostrará la cámara
+  function setup() {
+    let canvas = createCanvas(320, 260);
+    canvas.parent('canvasContainer');
 
-      flippedVideo = ml5.flipImage(video);
-      classifyVideo();
+    video = createCapture(VIDEO);
+    video.size(320, 240);
+    video.hide();
 
-      // Botón de sonido
-      document.getElementById('btnSonido').addEventListener('click', () => {
-        sonidoActivo = !sonidoActivo;
-        document.getElementById('btnSonido').textContent = sonidoActivo ? 'Desactivar Sonido' : 'Activar Sonido';
-        if (!sonidoActivo) speechSynthesis.cancel();
-      });
-    }
+    flippedVideo = ml5.flipImage(video);
 
-    //Muestra el video
-    function draw() {
-      background(0);
-      image(flippedVideo, 0, 0);
-      fill(255);
-      textSize(18);
-      textAlign(CENTER);
-      text(label, width/2, height-10);
-    }
+    // Llama a la función
+    classifyVideo();
 
-    function classifyVideo() {
-      flippedVideo = ml5.flipImage(video);
-      classifier.classify(flippedVideo, gotResult);
-      flippedVideo.remove();
-    }
+    document.getElementById('btnSonido').addEventListener('click', () => {
+      sonidoActivo = !sonidoActivo;
+      document.getElementById('btnSonido').textContent = sonidoActivo ? 'Desactivar Sonido' : 'Activar Sonido';
+      if (!sonidoActivo) speechSynthesis.cancel();
+    });
+  }
 
-    function gotResult(error, results) {
-      if(error) { console.error(error); return; }
+  function draw() {
+    background(0);
+    image(flippedVideo, 0, 0); // Muestra el video en el canvas
+    fill(255);
+    textSize(18);
+    textAlign(CENTER);
+    text(label, width/2, height-10);
+  }
 
-      let nuevoLabel = results[0].label.toLowerCase();
+  function classifyVideo() {
+    flippedVideo = ml5.flipImage(video);
+    classifier.classify(flippedVideo, gotResult);
+    flippedVideo.remove();
+  }
 
-      if(nuevoLabel !== ultimoLabel && objetosValidos.includes(nuevoLabel)) {
-        label = nuevoLabel; // Actualizar etiqueta
-        if(sonidoActivo) hablar(label);
-        ultimoLabel = label;
+  function gotResult(error, results) {
+    if (error) { console.error(error); return; }
+
+    let nuevoLabel = results[0].label.toLowerCase().trim();
+    console.log("Detectado:", nuevoLabel); //ver qué detecta realmente
+
+    let ahora = millis();
+
+    // Verifica si el resultado pertenece a los objetos válidos
+    if (objetosValidos.some(o => nuevoLabel.includes(o))) {
+      label = nuevoLabel;
+
+      // Cuando el objeto este estable , la voz se activa y habla
+      if (nuevoLabel === ultimoLabel) {
+        deteccionEstable += deltaTime;
+        if (deteccionEstable > 1000 && sonidoActivo && (ahora - ultimaVoz > tiempoMinimoEntreVoces)) {
+          hablar(label);
+          ultimaVoz = ahora;
+          deteccionEstable = 0;
+        }
       } else {
-        label = nuevoLabel;
+        deteccionEstable = 0;
       }
 
-      classifyVideo();
+      ultimoLabel = nuevoLabel;
+    } else {
+      label = "";
+      deteccionEstable = 0;
     }
 
-    function hablar(texto) {
-      let utter = new SpeechSynthesisUtterance(texto);
-      utter.lang = 'es-ES';
-      speechSynthesis.speak(utter); // Reproducir voz
-    }
-  </script>
+    classifyVideo();
+  }
+
+  function hablar(texto) {
+    if (speechSynthesis.speaking) speechSynthesis.cancel();
+    let utter = new SpeechSynthesisUtterance(texto);
+    utter.lang = 'es-ES';
+    speechSynthesis.speak(utter);
+  }
+</script>
+
 
 </body>
 </html>

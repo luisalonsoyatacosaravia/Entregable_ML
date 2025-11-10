@@ -1,1 +1,1 @@
-{"tfjsVersion":"1.7.4","tmVersion":"2.4.10","packageVersion":"0.8.4-alpha2","packageName":"@teachablemachine/image","timeStamp":"2025-11-06T23:52:01.122Z","userMetadata":{},"modelName":"tm-my-image-model","labels":["Tomatodo","LLave","Telefono","Billetera","Cargador"],"imageSize":224}
+{"tfjsVersion":"1.7.4","tmVersion":"2.4.10","packageVersion":"0.8.4-alpha2","packageName":"@teachablemachine/image","timeStamp":"2025-11-10T16:43:14.974Z","userMetadata":{},"modelName":"tm-my-image-model","labels":["celular","billetera","cargador","llave","mouse"],"imageSize":224}
