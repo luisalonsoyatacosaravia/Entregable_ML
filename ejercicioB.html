@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dibujo con reconocimiento y login</title>
+   <link rel="stylesheet" href="styles.css">
+
+  <!-- Librerías -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.10/p5.min.js"></script>
+  <script src="https://unpkg.com/ml5@1/dist/ml5.min.js"></script>
+
+</head>
+<body>
+
+  <div class="container">
+    <form id="form-login" autocomplete="off">
+      <label for="usuario">Usuario:</label>
+      <input type="text" id="usuario" required>
+
+      <label for="password">Clave:</label>
+      <input type="password" id="password" required>
+    </form>
+
+    <div id="canvas-container"></div>
+    <div id="resultados">Dibuja algo...</div>
+
+    <button id="reiniciar">Reiniciar</button>
+    <button id="verificar">Verificar imagen</button>
+  </div>
+
+  <script>
+    const listaUsuarios = [
+      { nombre: 'juanito', clave: '123456', codigo: 'strawberry' },
+      { nombre: 'pablito', clave: 'abc12345', codigo: 'chair' },
+      { nombre: 'magaly', clave: 'firulais', codigo: 'sun' }
+    ];
+
+    let classifier;
+    let canvas;
+    let resultDiv;
+    let resultadoActual = '';
+
+    function preload() {
+      classifier = ml5.imageClassifier('DoodleNet');
+    }
+
+    function setup() {
+      canvas = createCanvas(280, 280);
+      canvas.parent('canvas-container');
+      background(255);
+
+      classifier.classifyStart(canvas, gotResult);
+      resultDiv = select('#resultados');
+
+      select('#reiniciar').mousePressed(clearCanvas);
+      select('#verificar').mousePressed(verificarImagen);
+    }
+
+    function gotResult(results) {
+      let label = results[0].label;
+      let confidence = (results[0].confidence * 100).toFixed(2);
+      resultadoActual = label;
+      resultDiv.html(`✏️ ${label} - ${confidence}%`);
+    }
+
+    function clearCanvas() {
+      background(255);
+      resultDiv.html('Dibuja algo...');
+    }
+
+    function draw() {
+      strokeWeight(16);
+      stroke(0);
+      if (mouseIsPressed) {
+        line(pmouseX, pmouseY, mouseX, mouseY);
+      }
+    }
+
+    function verificarImagen() {
+      const usuario = document.querySelector('#usuario').value;
+      const password = document.querySelector('#password').value;
+      const user = listaUsuarios.find(u => u.nombre === usuario && u.clave === password);
+
+      if (!user) {
+        alert('Usuario o contraseña incorrectos');
+        return;
+      }
+
+      if (resultadoActual === user.codigo) {
+        alert(`¡Bienvenido ${usuario}! Tu dibujo fue reconocido correctamente.`);
+      } else {
+        alert(`El dibujo no coincide con tu código (${user.codigo}). Intenta otra vez.`);
+      }
+    }
+  </script>
+
+</body>
+</html>

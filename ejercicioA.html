@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ejercicio A</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- Cargar TensorFlow.js y el modelo MobileNet -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
+</head>
+<body>
+  <h1>Ejercicio A</h1>
+
+  <div class="contenedor">
+    <img id="preview" src="" alt="Preview" class="preview">
+    <input type="file" id="fileInput" accept="image/*">
+    <p id="resultado">Cargando modelo...</p>
+    <a href="index.html" class="volver">Regresar</a>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const preview = document.getElementById('preview');
+    const resultado = document.getElementById('resultado');
+    let modelo;
+
+    async function cargarModelo() {
+      resultado.textContent = "Cargando modelo...";
+      modelo = await mobilenet.load();
+      resultado.textContent = "Sube una imagen para analizar.";
+    }
+
+
+    cargarModelo();
+
+    fileInput.addEventListener('change', async (event) => {
+      const archivo = event.target.files[0];
+      if (archivo) {
+        const lector = new FileReader();
+
+        lector.onload = async e => {
+          preview.src = e.target.result;
+          resultado.textContent = "Analizando imagen...";
+
+          preview.onload = async () => {
+            const predicciones = await modelo.classify(preview);
+
+            let { className, probability } = predicciones[0];
+
+            className = className.split(',')[0];
+
+            const porcentaje = (probability * 100).toFixed(2);
+            resultado.innerHTML = `
+              <strong>Label:</strong> ${className}<br>
+              <strong>Confidence:</strong> ${porcentaje}%
+            `;
+          };
+        };
+        lector.readAsDataURL(archivo);
+      }
+    });
+  </script>
+</body>
+</html>
